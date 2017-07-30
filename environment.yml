@@ -1,0 +1,11 @@
+name: traffic-sign-classification
+channels:
+    - https://conda.anaconda.org/menpo
+dependencies:
+    - python==3.5
+    - numpy
+    - scikit-learn
+    - matplotlib
+    - jupyter
+    - opencv
+    - tensorflow
