@@ -126,14 +126,97 @@ X_valid_ini = (X_train_shuffled[valid_range + 1:n_train + 1])
 y_train_ini = (y_train_shuffled[0:valid_range + 1])
 y_valid_ini = (y_train_shuffled[valid_range + 1:n_train + 1])
 
-print(X_train_ini.shape)
-print(X_valid_ini.shape)
+
+# NN model
+import tensorflow as tf
+
+from tensorflow.contrib.layers import flatten
+
+def model(x):
+    inflated = [20, 48, 56]
+
+    # hyperparameters
+    mu = 0
+    sigma = 0.1
+
+    #======================================================================
+    # Layer 1: Convolutional. Input = 32x32x1. Output = 28x28x6.
+    w1 = tf.Variable(tf.truncated_normal([5,5,1,inflated[0]], mean = mu, stddev = sigma))
+    b1 = tf.Variable(tf.zeros(inflated[0]))
+
+    l1_conv = tf.nn.conv2d(x, w1, strides = [1,1,1,1], padding= 'VALID', name = 'l1_conv')
+    l1_conv = tf.nn.bias_add(l1_conv, b1, name = 'l1_conv_bias')
+
+    # activation
+    l1_act = tf.nn.relu(l1_conv, name = 'l1_act')
+
+    # Pooling. Input = 28x28x6. Output = 14x14x6.
+    l1_pool = tf.nn.max_pool(l1_act, [1,2,2,1],[1,2,2,1],'VALID', name = 'l1_pool')
+    l1_pool =tf.nn.dropout(l1_pool,.5)
 
 
+    #======================================================================
+    # Layer 2: Convolutional. Output = 10x10x16.
+
+    w2 = tf.Variable(tf.truncated_normal([5,5,inflated[0],inflated[1]], mean = mu, stddev = sigma))
+    b2 = tf.Variable(tf.zeros(inflated[1]))
+
+    l2_conv = tf.nn.conv2d(l1_pool, w2, strides = [1,1,1,1], padding = 'VALID', name = 'l2_conv')
+    l2_conv = tf.nn.bias_add(l2_conv, b2)
+
+    # activation
+    l2_act = tf.nn.relu(l2_conv, name = 'l2_act')
 
 
+    # Pooling. Input = 10x10x16. Output = 5x5x16.
+    l2_pool = tf.nn.max_pool(l2_act, [1,2,2,1],[1,2,2,1],'VALID', name = 'l2_pool')
 
 
+    #======================================================================
+    # Layer 3: Convolutional. Output = xx-xx-xx.
+
+    w3 = tf.Variable(tf.truncated_normal([5,5,inflated[1],inflated[2]], mean = mu, stddev = sigma))
+    b3 = tf.Variable(tf.zeros(inflated[2]))
+
+    l3_conv = tf.nn.conv2d(l2_pool, w3, strides = [1,1,1,1], padding = 'VALID', name = 'l3_conv')
+    l3_conv = tf.nn.bias_add(l3_conv, b3)
+
+    # activation
+    l2_act = tf.nn.relu(l3_conv, name = 'l3_act')
 
 
+    # Pooling. Input = 10x10x16. Output = 5x5x16.
+    l3_pool = tf.nn.max_pool(l3_act, [1,2,2,1],[1,2,2,1],'VALID', name = 'l3_pool')
+    l3_pool =tf.nn.dropout(l3_pool,.5)
 
+
+    #===============================================================
+    # Flatten. Input = 5x5x16. Output = 400.
+    nflat = int(5*5*inflated[2])
+    x_flatten = tf.reshape(l3_pool, [-1,nflat], name = 'x_flatten')
+
+    # Layer 4: Fully Connected. Input = 400. Output = 120.
+    w4 = tf.Variable(tf.truncated_normal([nflat,120], mean = mu, stddev = sigma))
+    b4 = tf.Variable(tf.zeros(120))
+
+    # activation
+    l4 = tf.add(tf.matmul(x_flatten,w4), b4, name = 'l4')
+    l4 = tf.nn.relu(l4)
+    l4 = tf.nn.dropout(l4,.8)
+
+    # Layer 5: Fully Connected. Input = 120. Output = 84.
+    w5 = tf.Variable(tf.truncated_normal([120,84], mean = mu, stddev = sigma))
+    b5 = tf.Variable(tf.zeros(84))
+
+    # activation
+    l5 = tf.add(tf.matmul(l4, w5),b4, name = 'l5')
+    l5 = tf.nn.relu(l5)
+
+
+    # Layer 6: Fully Connected. Input = 84. Output = 43.
+    w6 = tf.Variable(tf.truncated_normal([84,43], mean = mu, stddev = sigma))
+    b6 = tf.Variable(tf.zeros(43))
+
+    logits = tf.add(tf.matmul(l5, w6), b5, name = 'l6')
+    
+    return logits
