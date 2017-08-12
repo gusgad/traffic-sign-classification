@@ -108,14 +108,17 @@ for n in range(n_classes): #For each class
 
 
 X_train_gray = grayscale_array(X_out)
+X_test_gray = grayscale_array(X_test)
+
 X_train_norm= X_train_gray / 255
+X_test_norm= X_test_gray / 255
 
 
 # shuffling training and test sets
 from sklearn.utils import shuffle
 
 X_train_shuffled, y_train_shuffled = shuffle(X_train_norm, y_out, random_state = 3)
-X_test_shuffled, y_test_suffled = shuffle(X_test, y_test, random_state = 3)
+X_test_shuffled, y_test_shuffled = shuffle(X_test_norm, y_test, random_state = 3)
 
 #split  training/validation/
 n_train = len(X_train_shuffled)
@@ -231,7 +234,7 @@ loss_operation = tf.reduce_mean(cross_entropy)
 optimizer = tf.train.AdamOptimizer(learning_rate = rate)
 training_operation = optimizer.minimize(loss_operation)
 
-#Model evaluation
+# Model evaluation
 correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(one_hot_y, 1))
 accuracy_operation = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 saver = tf.train.Saver()
@@ -250,37 +253,46 @@ def evaluate(X_data, y_data):
 from time import time
 start_time = time()
 
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    num_examples = len(X_train_ini)
-    
-    print("Training...")
-    print()
-    for i in range(EPOCHS):
-        X_tref, y_tref = shuffle(X_train_ini, y_train_ini)
-        for offset in range(0, num_examples, BATCH_SIZE):
-            end = offset + BATCH_SIZE
-            batch_x, batch_y = X_tref[offset:end], y_tref[offset:end]
-            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y})
-
-        validation_accuracy = evaluate(X_valid_ini, y_valid_ini)
-        print("EPOCH {} ...".format(i+1))
-        print("Validation Accuracy = {:.3f}".format(validation_accuracy))
-        print()
-
-    print("Final Validation Accuracy = {:.3f}".format(validation_accuracy))
-    saver.save(sess, 'model')
-    print("Model saved")
+# Training
+#with tf.Session() as sess:
+#    sess.run(tf.global_variables_initializer())
+#    num_examples = len(X_train_ini)
+#    
+#
+#    print("Training...")
+#    print()
+#    for i in range(EPOCHS):
+#        X_tref, y_tref = shuffle(X_train_ini, y_train_ini)
+#        for offset in range(0, num_examples, BATCH_SIZE):
+#            end = offset + BATCH_SIZE
+#            batch_x, batch_y = X_tref[offset:end], y_tref[offset:end]
+#            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y})
+#
+#        validation_accuracy = evaluate(X_valid_ini, y_valid_ini)
+#        print("EPOCH {} ...".format(i+1))
+#        print("Validation Accuracy = {:.3f}".format(validation_accuracy))
+#        print()
+#
+#    print("Final Validation Accuracy = {:.3f}".format(validation_accuracy))
+#    saver.save(sess, 'lenet')
+#    print("Model saved")
 
 
 
 end_time = time()
-time_taken = end_time - start_time # time_taken is in seconds
+time_taken = end_time - start_time
 
 hours, rest = divmod(time_taken,3600)
 minutes, seconds = divmod(rest, 60)
 
 print ("Time: ", hours, "h, ", minutes, "min, ", seconds, "s ")
+
+# Evaluation of test set
+with tf.Session() as sess:
+    saver.restore(sess, tf.train.latest_checkpoint('.'))
+
+    test_accuracy = evaluate(X_test_shuffled, y_test_shuffled)
+    print("Test Accuracy = {:.3f}".format(test_accuracy))
 
 
 
