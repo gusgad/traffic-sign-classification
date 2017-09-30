@@ -253,6 +253,8 @@ def evaluate(X_data, y_data):
 from time import time
 start_time = time()
 
+### uncomment to train the network
+
 # Training
 #with tf.Session() as sess:
 #    sess.run(tf.global_variables_initializer())
@@ -289,23 +291,24 @@ print ("Time: ", hours, "h, ", minutes, "min, ", seconds, "s ")
 
 # Evaluation of test set
 with tf.Session() as sess:
-    saver.restore(sess, tf.train.latest_checkpoint('.'))
+   saver.restore(sess, tf.train.latest_checkpoint('.'))
 
-    test_accuracy = evaluate(X_test_shuffled, y_test_shuffled)
-    print("Test Accuracy = {:.3f}".format(test_accuracy))
+   test_accuracy = evaluate(X_test_shuffled, y_test_shuffled)
+   print("Test Accuracy = {:.3f}".format(test_accuracy))
 
+# Single evaluation
+def singleEvaluation(test_sample):
+    with tf.Session() as sess:
+        sess = tf.get_default_session()
+        saver.restore(sess, tf.train.latest_checkpoint('.'))
+        choice = sess.run(tf.argmax(logits, 1), feed_dict={x: test_sample})
+        return choice
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+#Plot some random image to compare prediction with actual result
+for i in range(4):
+    index = random.randint(0, len(X_test))
+    image =  X_test[index].squeeze()
+    imgfeed = to_grayscale(X_test[index]).reshape([1,32,32,1])
+    predicted = singleEvaluation(imgfeed)
+    print("Actual class: " + str(y_test[index]) + ", Predicted:   " + str(predicted))
 
